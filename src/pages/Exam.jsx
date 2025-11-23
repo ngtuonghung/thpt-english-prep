@@ -6,7 +6,7 @@ import TopBar from '../components/TopBar'
 import Notification from '../components/Notification'
 
 const EXAM_DURATION = 50 * 60 // 50 minutes in seconds
-const COUNTDOWN_DURATION = 1 // 10 seconds countdown before exam starts
+const COUNTDOWN_DURATION = 2 // 10 seconds countdown before exam starts
 
 function Exam() {
   const [searchParams] = useSearchParams()
@@ -69,6 +69,18 @@ function Exam() {
           if (urlExamId && examObj.id.toString() === urlExamId) {
             setExamId(examObj.id)
             setExamData(examObj.data)
+
+            // Debug: Check exam data structure
+            console.log('Exam data loaded:', {
+              hasReorderQuestions: !!examObj.data.reorder_questions,
+              reorderCount: examObj.data.reorder_questions?.length || 0,
+              hasFillShort: !!examObj.data.groups?.fill_short,
+              fillShortCount: examObj.data.groups?.fill_short?.length || 0,
+              hasFillLong: !!examObj.data.groups?.fill_long,
+              fillLongCount: examObj.data.groups?.fill_long?.length || 0,
+              hasReading: !!examObj.data.groups?.reading,
+              readingCount: examObj.data.groups?.reading?.length || 0
+            })
 
             // Restore saved state if exists
             const savedAnswers = sessionStorage.getItem('examAnswers')
@@ -416,24 +428,14 @@ function Exam() {
   }
 
   // Build flat list of all questions for table of contents
+  // Order matches extraction script: fill_short -> reorder -> fill_long -> reading
   const getAllQuestions = () => {
     if (!examData) return []
 
     const questions = []
     let questionNum = 1
 
-    // Reorder questions
-    if (examData.reorder_questions) {
-      examData.reorder_questions.forEach(q => {
-        questions.push({
-          num: questionNum++,
-          id: `reorder-${q.id}`,
-          type: 'reorder'
-        })
-      })
-    }
-
-    // Fill short groups
+    // Fill short groups (Questions 1-12)
     if (examData.groups.fill_short) {
       examData.groups.fill_short.forEach(group => {
         group.subquestions.forEach((_, subIdx) => {
@@ -446,7 +448,18 @@ function Exam() {
       })
     }
 
-    // Fill long groups
+    // Reorder questions (Questions 13-17)
+    if (examData.reorder_questions) {
+      examData.reorder_questions.forEach(q => {
+        questions.push({
+          num: questionNum++,
+          id: `reorder-${q.id}`,
+          type: 'reorder'
+        })
+      })
+    }
+
+    // Fill long groups (Questions 18-22)
     if (examData.groups.fill_long) {
       examData.groups.fill_long.forEach(group => {
         group.subquestions.forEach((_, subIdx) => {
@@ -459,7 +472,7 @@ function Exam() {
       })
     }
 
-    // Reading groups
+    // Reading groups (Questions 23-40)
     if (examData.groups.reading) {
       examData.groups.reading.forEach(group => {
         group.subquestions.forEach((_, subIdx) => {
@@ -577,52 +590,15 @@ function Exam() {
 
             {/* Questions Content */}
             <div className="exam-content">
-              {/* Reorder Questions */}
-              {examData.reorder_questions && examData.reorder_questions.length > 0 && (
-                <div className="question-section">
-                  <h2 className="section-title">
-                    <span className="section-number">Phần 1</span>
-                    Câu hỏi sắp xếp
-                  </h2>
-                  {examData.reorder_questions.map((question, idx) => {
-                    const questionId = `reorder-${question.id}`
-                    const questionNum = idx + 1
-                    return (
-                      <div key={question.id} id={`question-${questionNum}`} className="question-card">
-                        <div className="question-header">
-                          <span className="question-number">Câu {questionNum}</span>
-                        </div>
-                        <p className="question-text">{question.content}</p>
-                        <div className="options-list">
-                          {question.options.map((option, optIdx) => {
-                            const optionLetter = String.fromCharCode(65 + optIdx)
-                            return (
-                              <div
-                                key={optIdx}
-                                onClick={() => handleAnswerSelect(questionId, optionLetter)}
-                                className={`option-item ${answers[questionId] === optionLetter ? 'selected' : ''}`}
-                              >
-                                <span className="option-label">{optionLetter}.</span>
-                                <span className="option-text">{option}</span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Fill Short Groups */}
+              {/* Fill Short Groups - Phần 1 (Questions 1-12) */}
               {examData.groups.fill_short && examData.groups.fill_short.length > 0 && (
                 <div className="question-section">
                   <h2 className="section-title">
-                    <span className="section-number">Phần 2</span>
-                    Fill Short
+                    <span className="section-number">Phần 1</span>
+                    Điền từ ngắn
                   </h2>
                   {examData.groups.fill_short.map((group, groupIdx) => {
-                    let questionNum = examData.reorder_questions ? examData.reorder_questions.length : 0
+                    let questionNum = 0
 
                     // Calculate question number offset
                     for (let i = 0; i < groupIdx; i++) {
@@ -642,6 +618,9 @@ function Exam() {
                               <div className="question-header">
                                 <span className="question-number">Câu {currentQuestionNum}</span>
                               </div>
+                              {subq.content && (
+                                <p className="question-text">{subq.content}</p>
+                              )}
                               <div className="options-list">
                                 {subq.options.map((option, optIdx) => {
                                   const optionLetter = String.fromCharCode(65 + optIdx)
@@ -666,21 +645,75 @@ function Exam() {
                 </div>
               )}
 
-              {/* Fill Long Groups */}
-              {examData.groups.fill_long && examData.groups.fill_long.length > 0 && (
+              {/* Reorder Questions - Phần 2 (Questions 13-17) */}
+              {examData.reorder_questions && examData.reorder_questions.length > 0 && (
                 <div className="question-section">
                   <h2 className="section-title">
-                    <span className="section-number">Phần 3</span>
-                    Fill Long
+                    <span className="section-number">Phần 2</span>
+                    Sắp xếp câu
                   </h2>
-                  {examData.groups.fill_long.map((group, groupIdx) => {
-                    let questionNum = examData.reorder_questions ? examData.reorder_questions.length : 0
+                  {examData.reorder_questions.map((question, idx) => {
+                    const questionId = `reorder-${question.id}`
+                    let questionNum = 0
 
                     // Add fill_short questions
                     if (examData.groups.fill_short) {
                       examData.groups.fill_short.forEach(g => {
                         questionNum += g.subquestions.length
                       })
+                    }
+
+                    questionNum += idx + 1
+
+                    return (
+                      <div key={question.id} id={`question-${questionNum}`} className="question-card">
+                        <div className="question-header">
+                          <span className="question-number">Câu {questionNum}</span>
+                        </div>
+                        {question.content && (
+                          <p className="question-text">{question.content}</p>
+                        )}
+                        <div className="options-list">
+                          {question.options && question.options.map((option, optIdx) => {
+                            const optionLetter = String.fromCharCode(65 + optIdx)
+                            return (
+                              <div
+                                key={optIdx}
+                                onClick={() => handleAnswerSelect(questionId, optionLetter)}
+                                className={`option-item ${answers[questionId] === optionLetter ? 'selected' : ''}`}
+                              >
+                                <span className="option-label">{optionLetter}.</span>
+                                <span className="option-text">{option}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Fill Long Groups - Phần 3 (Questions 18-22) */}
+              {examData.groups.fill_long && examData.groups.fill_long.length > 0 && (
+                <div className="question-section">
+                  <h2 className="section-title">
+                    <span className="section-number">Phần 3</span>
+                    Điền từ dài
+                  </h2>
+                  {examData.groups.fill_long.map((group, groupIdx) => {
+                    let questionNum = 0
+
+                    // Add fill_short questions
+                    if (examData.groups.fill_short) {
+                      examData.groups.fill_short.forEach(g => {
+                        questionNum += g.subquestions.length
+                      })
+                    }
+
+                    // Add reorder questions
+                    if (examData.reorder_questions) {
+                      questionNum += examData.reorder_questions.length
                     }
 
                     // Calculate question number offset for fill_long
@@ -701,6 +734,9 @@ function Exam() {
                               <div className="question-header">
                                 <span className="question-number">Câu {currentQuestionNum}</span>
                               </div>
+                              {subq.content && (
+                                <p className="question-text">{subq.content}</p>
+                              )}
                               <div className="options-list">
                                 {subq.options.map((option, optIdx) => {
                                   const optionLetter = String.fromCharCode(65 + optIdx)
@@ -725,21 +761,26 @@ function Exam() {
                 </div>
               )}
 
-              {/* Reading Groups */}
+              {/* Reading Groups - Phần 4 (Questions 23-40) */}
               {examData.groups.reading && examData.groups.reading.length > 0 && (
                 <div className="question-section">
                   <h2 className="section-title">
                     <span className="section-number">Phần 4</span>
-                    Reading Comprehension
+                    Đọc hiểu
                   </h2>
                   {examData.groups.reading.map((group, groupIdx) => {
-                    let questionNum = examData.reorder_questions ? examData.reorder_questions.length : 0
+                    let questionNum = 0
 
                     // Add fill_short questions
                     if (examData.groups.fill_short) {
                       examData.groups.fill_short.forEach(g => {
                         questionNum += g.subquestions.length
                       })
+                    }
+
+                    // Add reorder questions
+                    if (examData.reorder_questions) {
+                      questionNum += examData.reorder_questions.length
                     }
 
                     // Add fill_long questions
