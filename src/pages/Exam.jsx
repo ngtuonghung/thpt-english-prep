@@ -427,60 +427,68 @@ function Exam() {
   // Build flat list of all questions for table of contents
   // Order matches extraction script: fill_short -> reorder -> fill_long -> reading
   const getAllQuestions = () => {
-    if (!examData) return []
+    if (!examData || !examData.groups) return []
 
     const questions = []
     let questionNum = 1
 
     // Fill short groups (Questions 1-12)
-    if (examData.groups.fill_short) {
+    if (examData.groups.fill_short && Array.isArray(examData.groups.fill_short)) {
       examData.groups.fill_short.forEach(group => {
-        group.subquestions.forEach((_, subIdx) => {
-          questions.push({
-            num: questionNum++,
-            id: `fill-short-${group.id}-${subIdx}`,
-            type: 'fill_short'
+        if (group.subquestions && Array.isArray(group.subquestions)) {
+          group.subquestions.forEach((_, subIdx) => {
+            questions.push({
+              num: questionNum++,
+              id: `fill-short-${group.id}-${subIdx}`,
+              type: 'fill_short'
+            })
           })
-        })
+        }
       })
     }
 
     // Reorder questions (Questions 13-17)
-    if (examData.reorder_questions) {
+    if (examData.reorder_questions && Array.isArray(examData.reorder_questions)) {
       examData.reorder_questions.forEach(group => {
-        group.subquestions.forEach((_, subIdx) => {
-          questions.push({
-            num: questionNum++,
-            id: `reorder-${group.id}-${subIdx}`,
-            type: 'reorder'
+        if (group.subquestions && Array.isArray(group.subquestions)) {
+          group.subquestions.forEach((_, subIdx) => {
+            questions.push({
+              num: questionNum++,
+              id: `reorder-${group.id}-${subIdx}`,
+              type: 'reorder'
+            })
           })
-        })
+        }
       })
     }
 
     // Fill long groups (Questions 18-22)
-    if (examData.groups.fill_long) {
+    if (examData.groups.fill_long && Array.isArray(examData.groups.fill_long)) {
       examData.groups.fill_long.forEach(group => {
-        group.subquestions.forEach((_, subIdx) => {
-          questions.push({
-            num: questionNum++,
-            id: `fill-long-${group.id}-${subIdx}`,
-            type: 'fill_long'
+        if (group.subquestions && Array.isArray(group.subquestions)) {
+          group.subquestions.forEach((_, subIdx) => {
+            questions.push({
+              num: questionNum++,
+              id: `fill-long-${group.id}-${subIdx}`,
+              type: 'fill_long'
+            })
           })
-        })
+        }
       })
     }
 
     // Reading groups (Questions 23-40)
-    if (examData.groups.reading) {
+    if (examData.groups.reading && Array.isArray(examData.groups.reading)) {
       examData.groups.reading.forEach(group => {
-        group.subquestions.forEach((_, subIdx) => {
-          questions.push({
-            num: questionNum++,
-            id: `reading-${group.id}-${subIdx}`,
-            type: 'reading'
+        if (group.subquestions && Array.isArray(group.subquestions)) {
+          group.subquestions.forEach((_, subIdx) => {
+            questions.push({
+              num: questionNum++,
+              id: `reading-${group.id}-${subIdx}`,
+              type: 'reading'
+            })
           })
-        })
+        }
       })
     }
 
@@ -593,6 +601,13 @@ function Exam() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="sidebar-section">
+                  <button onClick={handleSubmitClick} className="btn-submit-sidebar">
+                    Nộp bài
+                  </button>
                 </div>
               </div>
             </aside>
