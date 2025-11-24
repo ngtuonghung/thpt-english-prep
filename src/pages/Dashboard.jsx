@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import Notification from '../components/Notification'
 import TopBar from '../components/TopBar'
+import ExamHistory from '../components/ExamHistory'
 import './Dashboard.css'
 
 const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState(null)
   const [creatingExam, setCreatingExam] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const fetchingRef = useRef(false)
   const hasFetchedRef = useRef(false)
   const fileInputRef = useRef(null)
@@ -449,15 +451,21 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {/* Exam History Section */}
+          <ExamHistory 
+            accessToken={user?.access_token} 
+            onLoadingChange={setLoadingHistory}
+          />
         </div>
       </main>
 
-      {/* Loading overlay when fetching user info */}
-      {fetchingUserInfo && (
+      {/* Loading overlay when fetching user info or history */}
+      {(fetchingUserInfo || loadingHistory) && (
         <div className="loading-overlay">
           <div className="loading-overlay-content">
             <div className="spinner"></div>
-            <p>Đang tải thông tin người dùng...</p>
+            <p>Đang tải dữ liệu...</p>
           </div>
         </div>
       )}

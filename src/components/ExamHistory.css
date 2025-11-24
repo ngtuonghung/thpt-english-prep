@@ -1,0 +1,247 @@
+/* Exam History Section */
+.exam-history-section {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(61, 61, 61, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 1.75rem;
+  color: #3d3d3d;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.history-loading {
+  text-align: center;
+  padding: 3rem;
+  color: #6b6b6b;
+}
+
+.history-loading .spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+  border: 3px solid rgba(61, 61, 61, 0.1);
+  border-top-color: #3d3d3d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-history {
+  text-align: center;
+  padding: 3rem;
+  color: #6b6b6b;
+}
+
+.no-history svg {
+  margin: 0 auto 1rem;
+  color: #8b6f47;
+  opacity: 0.5;
+}
+
+.no-history p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  padding-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(139, 111, 71, 0.1);
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.history-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(61, 61, 61, 0.1);
+}
+
+.exam-id-badge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8b6f47;
+  background: rgba(139, 111, 71, 0.1);
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+}
+
+.score-badge {
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 0.375rem 0.875rem;
+  border-radius: 8px;
+}
+
+.score-excellent {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.score-good {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.score-poor {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.history-card-body {
+  margin-bottom: 0.5rem;
+}
+
+.history-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b6b6b;
+}
+
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3d3d3d;
+}
+
+.history-card-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 1.5rem;
+  background: white;
+  border-top: 1px solid rgba(139, 111, 71, 0.1);
+  border-radius: 0 0 12px 12px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-card:hover .history-card-actions {
+  max-height: 80px;
+  opacity: 1;
+  padding: 1rem 1.5rem;
+}
+
+.btn-history-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(61, 61, 61, 0.2);
+  border-radius: 6px;
+  background: white;
+  color: #3d3d3d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-history-action:hover {
+  background: rgba(61, 61, 61, 0.05);
+  border-color: rgba(61, 61, 61, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-history-action svg {
+  flex-shrink: 0;
+}
+
+.btn-redo {
+  color: #3d3d3d;
+}
+
+.btn-redo:hover {
+  background: rgba(139, 111, 71, 0.1);
+  border-color: #8b6f47;
+  color: #8b6f47;
+}
+
+.btn-review {
+  color: #3d3d3d;
+}
+
+.btn-review:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+@media (max-width: 768px) {
+  .history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-history-section {
+    padding: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .history-card {
+    padding-bottom: 1.5rem;
+  }
+
+  .history-card-actions {
+    position: static;
+    max-height: none;
+    opacity: 1;
+    padding: 1rem 0 0 0;
+    margin-top: 1rem;
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(61, 61, 61, 0.1);
+    border-radius: 0;
+  }
+
+  .btn-history-action {
+    font-size: 0.8125rem;
+    padding: 0.625rem 0.875rem;
+  }
+}

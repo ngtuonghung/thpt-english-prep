@@ -4,6 +4,7 @@ import './Submission.css'
 import TopBar from '../components/TopBar'
 import QuestionsList from '../components/QuestionsList'
 import ConfirmModal from '../components/ConfirmModal'
+import QuestionsContent from '../components/QuestionsContent'
 
 const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
 const CHAT_API = 'https://e9hi4aqre3.execute-api.ap-southeast-1.amazonaws.com/v2/chat'
@@ -303,16 +304,6 @@ function Submission() {
       chatInputRef.current?.focus()
     }, 400)
   }, [activeChatQuestion, chatSessions])
-
-  const renderMarkdown = (text) => {
-    if (!text) return { __html: '' }
-    const html = text
-      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>') // Bold and Italic
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/\n/g, '<br />')
-    return { __html: html }
-  }
 
   // Build flat list of all questions - memoized for performance
   const getAllQuestions = useCallback(() => {
@@ -650,139 +641,6 @@ function Submission() {
     setChatInput(e.target.value)
   }, [])
 
-  const renderQuestion = useCallback((question) => {
-    const questionId = question.id
-    const userAnswer = answers?.[questionId]
-    const correctAnswer = question.data.correct_answer
-    const isCorrect = userAnswer === correctAnswer
-    const isEmptyAnswer = !userAnswer
-
-    return (
-      <div key={questionId} id={`question-${question.num}`} className="question-card">
-        <div className="question-header-row">
-          <div className="question-header">
-            <span className="question-number">Câu {question.num}</span>
-            <span className={`answer-indicator ${isCorrect ? 'correct' : 'incorrect'}`}>
-              {isCorrect ? '✓ Đúng' : isEmptyAnswer ? '○ Chưa trả lời' : '✗ Sai'}
-            </span>
-          </div>
-          <button
-            className={`chat-bubble-btn ${activeChatQuestion === questionId ? 'active' : ''}`}
-            onClick={() => handleChatBubbleClick(questionId)}
-            title="Chat với AI về câu hỏi này"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              {/* Robot head */}
-              <rect x="6" y="8" width="12" height="10" rx="2" ry="2"></rect>
-              {/* Antenna */}
-              <line x1="12" y1="8" x2="12" y2="5"></line>
-              <circle cx="12" cy="4" r="1" fill="currentColor"></circle>
-              {/* Eyes */}
-              <line x1="9.5" y1="12" x2="9.5" y2="14"></line>
-              <line x1="14.5" y1="12" x2="14.5" y2="14"></line>
-              {/* Ears */}
-              <path d="M6 11 L4 11 C3.5 11 3 11.5 3 12 L3 14 C3 14.5 3.5 15 4 15 L6 15"></path>
-              <path d="M18 11 L20 11 C20.5 11 21 11.5 21 12 L21 14 C21 14.5 20.5 15 20 15 L18 15"></path>
-              {/* Chat bubble */}
-              <circle cx="18" cy="7" r="3.5"></circle>
-              <circle cx="17" cy="6.5" r="0.5" fill="currentColor"></circle>
-              <circle cx="18" cy="6.5" r="0.5" fill="currentColor"></circle>
-              <circle cx="19" cy="6.5" r="0.5" fill="currentColor"></circle>
-            </svg>
-          </button>
-        </div>
-
-        {question.data.content && (
-          <p
-            className="question-text"
-            dangerouslySetInnerHTML={renderMarkdown(question.data.content)}
-          />
-        )}
-
-        <div className="options-list">
-          {question.data.options.map((option, optIdx) => {
-            const optionLetter = String.fromCharCode(65 + optIdx)
-            const isUserAnswer = userAnswer === optionLetter
-            const isCorrectAnswer = correctAnswer === optionLetter
-
-            // Logic:
-            // - Câu đúng: bôi xanh đáp án user chọn
-            // - Câu sai: bôi đỏ đáp án user chọn + bôi xanh đáp án đúng
-            // - Chưa chọn: bôi xanh đáp án đúng
-            let optionClass = 'option-item'
-            if (isUserAnswer && isCorrect) {
-              optionClass += ' user-answer-correct'
-            } else if (isUserAnswer && !isCorrect) {
-              optionClass += ' user-answer-incorrect'
-            }
-            if ((isEmptyAnswer || !isCorrect) && isCorrectAnswer) {
-              optionClass += ' correct-answer-highlight'
-            }
-
-            return (
-              <div key={optIdx} className={optionClass}>
-                <span className="option-label">{optionLetter}.</span>
-                <span className="option-text">{option}</span>
-                {isUserAnswer && isCorrect && (
-                  <span className="option-badge correct">✓ Bạn chọn</span>
-                )}
-                {isUserAnswer && !isCorrect && (
-                  <span className="option-badge incorrect">✗ Bạn chọn sai</span>
-                )}
-                {(isEmptyAnswer || !isCorrect) && isCorrectAnswer && (
-                  <span className="option-badge correct-ans">✓ Đáp án đúng</span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }, [answers, activeChatQuestion, handleChatBubbleClick, renderMarkdown])
-
-  const renderContextWithQuestions = useCallback((questions) => {
-    // Group questions by their group (based on context and type)
-    const groupedQuestions = []
-    let currentGroup = null
-
-    questions.forEach(question => {
-      if (question.isFirstInGroup) {
-        if (currentGroup) {
-          groupedQuestions.push(currentGroup)
-        }
-        currentGroup = {
-          context: question.context,
-          type: question.type,
-          questions: [question]
-        }
-      } else if (currentGroup) {
-        currentGroup.questions.push(question)
-      } else {
-        // Shouldn't happen, but handle it
-        currentGroup = {
-          context: null,
-          type: question.type,
-          questions: [question]
-        }
-      }
-    })
-
-    if (currentGroup) {
-      groupedQuestions.push(currentGroup)
-    }
-
-    return groupedQuestions.map((group, groupIdx) => (
-      <div key={`group-${groupIdx}`} className="question-group">
-        {group.context && (
-          <div className="group-context">
-            <p className="context-text" dangerouslySetInnerHTML={renderMarkdown(group.context)} />
-          </div>
-        )}
-        {group.questions.map(question => renderQuestion(question))}
-      </div>
-    ))
-  }, [renderMarkdown, renderQuestion])
-
   const handleBackToDashboard = () => {
     // Always show confirmation modal
     setShowBackModal(true)
@@ -901,7 +759,13 @@ function Submission() {
           {/* Questions Content */}
           <div className="submission-content">
             {/* Questions List */}
-            {renderContextWithQuestions(allQuestions)}
+            <QuestionsContent
+              examData={examData}
+              answers={answers}
+              mode="submission"
+              onChatBubbleClick={handleChatBubbleClick}
+              activeChatQuestion={activeChatQuestion}
+            />
           </div>
 
           {/* Chat Pane - Always rendered, visibility controlled by CSS */}
