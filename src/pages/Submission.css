@@ -838,6 +838,25 @@
   color: #5a5a5a;
 }
 
+/* Token count display */
+.message-tokens {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(139, 111, 71, 0.1);
+  border: 1px solid rgba(139, 111, 71, 0.2);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #8b6f47;
+  font-weight: 500;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.message-tokens:hover {
+  opacity: 1;
+}
+
 /* Thinking animation */
 .thinking-text {
   color: #8b6f47;

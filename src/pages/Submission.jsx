@@ -319,10 +319,6 @@ function Submission() {
 
     const currentSession = chatSessions[activeChatQuestion] || { messages: [] }
     
-    // Check if this is the first user message (only initial prompt exists or no messages)
-    const isFirstUserMessage = currentSession.messages.length === 0 || 
-      (currentSession.messages.length === 1 && currentSession.messages[0].isInitialPrompt)
-    
     const userMessage = {
       id: currentSession.messages.length + 1,
       sender: 'user',
@@ -338,7 +334,6 @@ function Submission() {
       }
     }))
 
-    const userQuestion = chatInput
     setChatInput('')
 
     // Get current question data
@@ -353,13 +348,21 @@ function Submission() {
       // Get full context from the current question's context property
       const fullContext = currentQuestion.context || ''
       
+      // Build chat history from current session (exclude initial prompt)
+      const chatHistory = [...currentSession.messages, userMessage]
+        .filter(msg => !msg.isInitialPrompt)
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }))
+      
       const requestBody = {
         context: fullContext,
         content: currentQuestion.data.content || '',
         options: currentQuestion.data.options || [],
         correct_answer: correctAnswer,
         user_choice: userChoice || '',
-        user_prompt: isFirstUserMessage ? userQuestion : ''
+        chat_history: chatHistory
       }
 
       // Log request details to console
@@ -367,7 +370,6 @@ function Submission() {
       console.log('Question ID:', activeChatQuestion)
       console.log('Question Type:', currentQuestion.type)
       console.log('Question Number:', currentQuestion.num)
-      console.log('Is First User Message:', isFirstUserMessage)
       console.log('URL:', CHAT_API)
       console.log('Headers:', {
         'Content-Type': 'application/json',
@@ -420,10 +422,12 @@ function Submission() {
 
       // Parse response from Lambda
       let aiText = 'Xin lỗi, tôi không thể trả lời câu hỏi này.'
+      let tokenCount = null
 
       if (data.response) {
         // Standard response format from Lambda
         aiText = data.response
+        tokenCount = data.tokens || null
       } else if (data.body) {
         // If body is a string, try parsing it
         try {
@@ -453,7 +457,7 @@ function Submission() {
         [activeChatQuestion]: {
           messages: prev[activeChatQuestion].messages.map(msg =>
             msg.id === thinkingId
-              ? { ...msg, text: '', loading: false, streaming: true }
+              ? { ...msg, text: '', loading: false, streaming: true, tokens: tokenCount }
               : msg
           )
         }
@@ -809,6 +813,11 @@ function Submission() {
                       <>
                         <div style={{ display: 'inline' }} dangerouslySetInnerHTML={{ __html: message.text }} />
                         {message.streaming && <span className="streaming-cursor">▊</span>}
+                        {!message.streaming && message.tokens && (
+                          <div className="message-tokens">
+                            {message.tokens} tokens
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
