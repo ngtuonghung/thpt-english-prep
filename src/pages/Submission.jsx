@@ -37,6 +37,7 @@ function Submission() {
     const savedExam = sessionStorage.getItem('currentExam');
     const savedAnswers = sessionStorage.getItem('examAnswers');
     const savedStartTime = sessionStorage.getItem('examStartTime');
+    const savedFinishTime = sessionStorage.getItem('examFinishTime');
 
     if (savedExam && savedAnswers) {
         try {
@@ -46,8 +47,12 @@ function Submission() {
             if (savedStartTime) {
                 setExamStartTime(new Date(savedStartTime));
             }
-            // Set finish time to now (when submission page loads)
-            setExamFinishTime(new Date());
+            if (savedFinishTime) {
+                setExamFinishTime(new Date(savedFinishTime));
+            } else {
+                // Fallback: Set finish time to now if not stored
+                setExamFinishTime(new Date());
+            }
         } catch (error) {
             console.error("Failed to parse exam/answer data from session storage", error);
             navigate('/dashboard');
@@ -487,8 +492,10 @@ function Submission() {
     sessionStorage.removeItem('currentExam');
     sessionStorage.removeItem('examAnswers');
     sessionStorage.removeItem('examStartTime');
+    sessionStorage.removeItem('examFinishTime');
     sessionStorage.removeItem('examTimeRemaining');
     sessionStorage.removeItem('examStarted');
+    sessionStorage.removeItem('examDoing');
     navigate('/dashboard');
   };
 
@@ -531,57 +538,51 @@ function Submission() {
                 </div>
               </div>
 
+              {/* Exam Info */}
+              <div className="sidebar-section exam-info-section">
+                <div className="exam-info-card">
+                  <div className="info-row">
+                    <span className="info-label">Mã đề:</span>
+                    <span className="info-value">{examData.quiz_id}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Bắt đầu:</span>
+                    <span className="info-value">{formatDateTime(examStartTime)}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Kết thúc:</span>
+                    <span className="info-value">{formatDateTime(examFinishTime)}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="info-label">Thời gian:</span>
+                    <span className="info-value">{calculateDuration(examStartTime, examFinishTime)}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Questions List */}
               <div className="sidebar-section question-list-section">
                 <QuestionsList
                   allQuestions={allQuestions}
                   answers={answers}
                   onQuestionClick={scrollToQuestion}
+                  showResults={true}
                 />
+              </div>
+
+              {/* Back to Dashboard Button */}
+              <div className="sidebar-section">
+                <button onClick={handleBackToDashboard} className="btn-back-dashboard">
+                  Quay lại Dashboard
+                </button>
               </div>
             </div>
           </aside>
 
           {/* Questions Content */}
           <div className="submission-content">
-            {/* Exam Info */}
-            <div className="exam-info-card">
-              <div className="info-row">
-                <span className="info-label">Kết quả:</span>
-                <span className="info-value">
-                  <span className="score-text">Điểm: {calculateScore.correct}/{calculateScore.total}</span>
-                  <span className="score-percent">{calculateScore.percentage}%</span>
-                </span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Mã đề:</span>
-                <span className="info-value">{examData.quiz_id}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Bắt đầu:</span>
-                <span className="info-value">{formatDateTime(examStartTime)}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Kết thúc:</span>
-                <span className="info-value">{formatDateTime(examFinishTime)}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Thời gian làm bài:</span>
-                <span className="info-value">{calculateDuration(examStartTime, examFinishTime)}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Tổng câu hỏi:</span>
-                <span className="info-value">{allQuestions.length}</span>
-              </div>
-            </div>
-
             {/* Questions List */}
             {allQuestions.map((question, index) => renderQuestion(question, index))}
-
-            {/* Back Button */}
-            <button onClick={handleBackToDashboard} className="btn-back-dashboard">
-              Quay lại Dashboard
-            </button>
           </div>
 
           {/* Chat Pane - Always rendered, visibility controlled by CSS */}

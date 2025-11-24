@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import './QuestionsList.css'
 
-function QuestionsList({ allQuestions, answers, onQuestionClick }) {
+function QuestionsList({ allQuestions, answers, onQuestionClick, showResults }) {
   // Group questions for better organization (optional)
   const questionCount = useMemo(() => {
     return {
@@ -9,6 +9,26 @@ function QuestionsList({ allQuestions, answers, onQuestionClick }) {
       answered: Object.keys(answers).length
     }
   }, [allQuestions, answers])
+
+  // Get button class based on answer status
+  const getButtonClass = (question) => {
+    const userAnswer = answers[question.id]
+    
+    if (!showResults) {
+      // Exam mode: just show if answered
+      return userAnswer ? 'answered' : ''
+    }
+    
+    // Submission mode: show correct/incorrect
+    if (!userAnswer) {
+      return 'not-answered'
+    }
+    
+    const correctAnswer = question.data?.correct_answer
+    const isCorrect = userAnswer === correctAnswer
+    
+    return isCorrect ? 'correct' : 'incorrect'
+  }
 
   return (
     <div className="questions-list-widget">
@@ -25,7 +45,7 @@ function QuestionsList({ allQuestions, answers, onQuestionClick }) {
           <button
             key={q.id}
             onClick={() => onQuestionClick(q.num)}
-            className={`question-btn ${answers[q.id] ? 'answered' : ''}`}
+            className={`question-btn ${getButtonClass(q)}`}
             title={`Câu ${q.num}${answers[q.id] ? ` - Đã chọn: ${answers[q.id]}` : ''}`}
           >
             {q.num}

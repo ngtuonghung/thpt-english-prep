@@ -373,14 +373,6 @@ function Exam() {
     }
   }, [examDoing, examId])
 
-  const clearExamStorage = () => {
-    console.log('Clearing exam storage. Exam ID:', examId)
-    sessionStorage.removeItem('currentExam')
-    sessionStorage.removeItem('examAnswers')
-    sessionStorage.removeItem('examStartTime')
-    sessionStorage.removeItem('examDoing')
-  }
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -404,6 +396,14 @@ function Exam() {
   }
 
   const handleSubmitClick = () => {
+    // Check if user has answered at least one question
+    if (Object.keys(answers).length === 0) {
+      setNotification({
+        type: 'warning',
+        message: 'Bạn chưa trả lời câu hỏi nào. Vui lòng trả lời ít nhất một câu trước khi nộp bài.'
+      })
+      return
+    }
     setShowSubmitModal(true)
   }
 
@@ -433,6 +433,10 @@ function Exam() {
 
       const result = await response.json()
       console.log('Submission successful:', result)
+
+      // Store finish time
+      const finishTime = new Date()
+      sessionStorage.setItem('examFinishTime', finishTime.toISOString())
 
       // Set examDoing to false and remove examTimeRemaining
       sessionStorage.setItem('examDoing', 'false')
@@ -472,8 +476,8 @@ function Exam() {
     // Set flag to allow navigation
     isNavigatingAway.current = true
 
-    // Clear exam storage
-    clearExamStorage()
+    // Store finish time
+    sessionStorage.setItem('examFinishTime', new Date().toISOString())
 
     navigate('/dashboard')
   }
@@ -488,8 +492,8 @@ function Exam() {
     // Set flag to allow navigation
     isNavigatingAway.current = true
 
-    // Clear exam storage
-    clearExamStorage()
+    // Store finish time
+    sessionStorage.setItem('examFinishTime', new Date().toISOString())
 
     // Close modal and navigate back
     setShowNavigationModal(false)

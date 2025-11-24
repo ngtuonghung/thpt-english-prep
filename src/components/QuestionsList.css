@@ -89,6 +89,35 @@
   border-color: #8b6f47;
 }
 
+.question-btn.correct {
+  background: #6b8e4e;
+  color: #ffffff;
+  border-color: #6b8e4e;
+}
+
+.question-btn.correct:hover {
+  background: #5a7a42;
+  border-color: #5a7a42;
+}
+
+.question-btn.incorrect {
+  background: #b84e4e;
+  color: #ffffff;
+  border-color: #b84e4e;
+}
+
+.question-btn.incorrect:hover {
+  background: #a03e3e;
+  border-color: #a03e3e;
+}
+
+.question-btn.not-answered {
+  background: rgba(255, 255, 255, 0.9);
+  color: #6b6b6b;
+  border-color: rgba(61, 61, 61, 0.25);
+  opacity: 0.6;
+}
+
 /* Scrollbar for questions grid */
 .questions-grid::-webkit-scrollbar {
   width: 6px;
