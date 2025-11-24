@@ -212,6 +212,10 @@ export default function Dashboard() {
     fileInputRef.current?.click()
   }
 
+  const handleReviewQuiz = () => {
+    navigate('/review-quiz')
+  }
+
   const handleCreateExam = async () => {
     setCreatingExam(true)
 
@@ -321,6 +325,31 @@ export default function Dashboard() {
 
           {/* Actions */}
           <div className="actions-container">
+            <div className="action-card-modern">
+              <div className="action-card-content">
+                <div className="action-card-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                  </svg>
+                </div>
+                <div className="action-card-text">
+                  <h3 className="action-card-title">Ôn tập nhanh</h3>
+                  <p className="action-card-description">Sinh 5 câu hỏi review dựa trên lịch sử trả lời sai</p>
+                </div>
+              </div>
+              <button
+                className="btn-action-modern"
+                onClick={handleReviewQuiz}
+              >
+                <span>Bắt đầu ôn tập</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+
             <div className="action-card-modern">
               <div className="action-card-content">
                 <div className="action-card-icon">
