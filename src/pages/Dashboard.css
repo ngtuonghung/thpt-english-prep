@@ -3,27 +3,17 @@
 .dashboard {
   min-height: 100vh;
   background: #F1E9D2;
-}
-
-.dashboard-header {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(61, 61, 61, 0.1);
-  padding: 1.25rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.dashboard-header .container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
+
 
 .dashboard-main {
   padding: 3rem 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .dashboard-welcome {

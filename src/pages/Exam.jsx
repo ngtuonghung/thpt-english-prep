@@ -4,9 +4,10 @@ import './Exam.css'
 import ConfirmModal from '../components/ConfirmModal'
 import TopBar from '../components/TopBar'
 import Notification from '../components/Notification'
+import QuestionsList from '../components/QuestionsList'
 
 const EXAM_DURATION = 50 * 60 // 50 minutes in seconds
-const COUNTDOWN_DURATION = 2 // 10 seconds countdown before exam starts
+const COUNTDOWN_DURATION = 3 // 10 seconds countdown before exam starts
 
 function Exam() {
   const [searchParams] = useSearchParams()
@@ -18,7 +19,7 @@ function Exam() {
   const [examId, setExamId] = useState(null)
   const [answers, setAnswers] = useState({}) // Store user's answers
   const [timeRemaining, setTimeRemaining] = useState(EXAM_DURATION)
-  const [examStarted, setExamStarted] = useState(false)
+  const [examDoing, setExamDoing] = useState(false)
   const [examStartTime, setExamStartTime] = useState(null)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [showExitModal, setShowExitModal] = useState(false)
@@ -54,8 +55,20 @@ function Exam() {
 
       // Load exam from session storage
       const currentExam = sessionStorage.getItem('currentExam')
+      const savedExamDoing = sessionStorage.getItem('examDoing')
 
-      // Redirect to dashboard if no exam data or no exam ID in URL
+      // Redirect to dashboard only if examDoing is explicitly false (exam finished)
+      if (savedExamDoing === 'false') {
+        // Clean up session storage
+        sessionStorage.removeItem('currentExam')
+        sessionStorage.removeItem('examAnswers')
+        sessionStorage.removeItem('examStartTime')
+        sessionStorage.removeItem('examDoing')
+        navigate('/dashboard')
+        return
+      }
+
+      // Redirect if no exam data or exam ID
       if (!currentExam || !urlExamId) {
         navigate('/dashboard')
         return
@@ -85,8 +98,7 @@ function Exam() {
             // Restore saved state if exists
             const savedAnswers = sessionStorage.getItem('examAnswers')
             const savedStartTime = sessionStorage.getItem('examStartTime')
-            const savedTimeRemaining = sessionStorage.getItem('examTimeRemaining')
-            const savedExamStarted = sessionStorage.getItem('examStarted')
+            const savedExamDoing = sessionStorage.getItem('examDoing')
 
             if (savedAnswers) {
               setAnswers(JSON.parse(savedAnswers))
@@ -100,12 +112,13 @@ function Exam() {
               sessionStorage.setItem('examStartTime', startTime.toISOString())
             }
 
-            if (savedTimeRemaining) {
-              setTimeRemaining(parseInt(savedTimeRemaining))
-            }
-
-            if (savedExamStarted === 'true') {
-              setExamStarted(true)
+            if (savedExamDoing === 'true') {
+              setExamDoing(true)
+              // Restore time remaining only if exam is doing
+              const savedTimeRemaining = sessionStorage.getItem('examTimeRemaining')
+              if (savedTimeRemaining) {
+                setTimeRemaining(parseInt(savedTimeRemaining))
+              }
             } else {
               // First time loading - show countdown
               setCountdown(COUNTDOWN_DURATION)
@@ -131,35 +144,34 @@ function Exam() {
 
   // Save answers to session storage whenever they change
   useEffect(() => {
-    if (examStarted && Object.keys(answers).length > 0) {
+    if (examDoing && Object.keys(answers).length > 0) {
       sessionStorage.setItem('examAnswers', JSON.stringify(answers))
     }
-  }, [answers, examStarted])
+  }, [answers, examDoing])
 
   // Save time remaining to session storage
   useEffect(() => {
-    if (examStarted) {
+    if (examDoing) {
       sessionStorage.setItem('examTimeRemaining', timeRemaining.toString())
     }
-  }, [timeRemaining, examStarted])
+  }, [timeRemaining, examDoing])
 
-  // Save exam started state
+  // Save exam doing state
   useEffect(() => {
-    if (examStarted) {
-      sessionStorage.setItem('examStarted', 'true')
-    }
-  }, [examStarted])
+    sessionStorage.setItem('examDoing', examDoing.toString())
+  }, [examDoing])
 
   // Timer countdown
   useEffect(() => {
-    if (!examStarted || timeRemaining <= 0) return
+    if (!examDoing || timeRemaining <= 0) return
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
           clearInterval(timer)
           // Auto-submit when time runs out
-          clearExamStorage()
+          sessionStorage.setItem('examDoing', 'false')
+          sessionStorage.removeItem('examTimeRemaining')
           navigate('/dashboard')
           return 0
         }
@@ -168,7 +180,7 @@ function Exam() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [examStarted, timeRemaining, navigate])
+  }, [examDoing, timeRemaining, navigate])
 
   // Countdown timer before exam starts
   useEffect(() => {
@@ -178,7 +190,7 @@ function Exam() {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer)
-          setExamStarted(true)
+          setExamDoing(true)
           return 0
         }
         return prev - 1
@@ -190,7 +202,7 @@ function Exam() {
 
   // Check for time milestone notifications
   useEffect(() => {
-    if (!examStarted || timeRemaining <= 0) return
+    if (!examDoing || timeRemaining <= 0) return
 
     const halfTime = EXAM_DURATION / 2 // 25 minutes for 50 min exam
     const oneFifthTime = EXAM_DURATION / 5 // 10 minutes for 50 min exam
@@ -235,13 +247,15 @@ function Exam() {
       })
       setNotified1Min(true)
     }
-  }, [timeRemaining, examStarted, notified25Min, notified10Min, notified5Min, notified1Min])
+  }, [timeRemaining, examDoing, notified25Min, notified10Min, notified5Min, notified1Min])
 
   // Handle browser navigation (back/forward button, external navigation, tab close, refresh)
   useEffect(() => {
+    // Handle popstate (back/forward button)
     const handlePopState = (e) => {
-      if (examStarted && !isNavigatingAway.current) {
+      if (examDoing && !isNavigatingAway.current) {
         e.preventDefault()
+        e.stopPropagation()
         // Push the state back to stay on current page
         window.history.pushState(null, '', window.location.pathname + window.location.search)
         setShowNavigationModal(true)
@@ -257,65 +271,114 @@ function Exam() {
     }
 
     // Handle beforeunload (closing tab, refreshing, or typing new URL in address bar)
-    // Note: Modern browsers only show generic message for security reasons
     const handleBeforeUnload = (e) => {
-      if (examStarted && !isNavigatingAway.current) {
+      if (examDoing && !isNavigatingAway.current) {
         e.preventDefault()
-        e.returnValue = '' // Chrome requires returnValue to be set
-        return '' // Some browsers require a return value
+        e.returnValue = 'Bạn đang trong bài thi. Nếu rời khỏi trang này, tất cả câu trả lời của bạn sẽ bị mất.'
+        return e.returnValue
+      }
+    }
+
+    // Handle unload (when page is actually closing)
+    const handleUnload = (e) => {
+      if (examDoing && !isNavigatingAway.current) {
+        // Log the exit
+        console.log('=== PAGE CLOSED/REFRESHED DURING EXAM ===')
+        console.log('Exam ID:', examId)
       }
     }
 
     // Intercept all link clicks to show custom modal
     const handleClick = (e) => {
-      if (!examStarted || isNavigatingAway.current) return
+      if (!examDoing || isNavigatingAway.current) return
 
       // Check if click is on a link or inside a link
       const link = e.target.closest('a')
       if (link && link.href) {
-        const linkUrl = new URL(link.href)
-        const currentUrl = new URL(window.location.href)
+        try {
+          const linkUrl = new URL(link.href)
+          const currentUrl = new URL(window.location.href)
 
-        // If link goes to different page (not same page anchor), show modal
-        if (linkUrl.pathname !== currentUrl.pathname || linkUrl.search !== currentUrl.search) {
+          // If link goes to different page (not same page anchor), show modal
+          if (linkUrl.pathname !== currentUrl.pathname || 
+              linkUrl.search !== currentUrl.search || 
+              linkUrl.origin !== currentUrl.origin) {
+            e.preventDefault()
+            e.stopPropagation()
+            e.stopImmediatePropagation()
+            setShowNavigationModal(true)
+          }
+        } catch (err) {
+          // If URL parsing fails, block navigation to be safe
           e.preventDefault()
           e.stopPropagation()
+          e.stopImmediatePropagation()
           setShowNavigationModal(true)
         }
       }
     }
 
+    // Intercept form submissions
+    const handleSubmit = (e) => {
+      if (examDoing && !isNavigatingAway.current) {
+        const form = e.target
+        if (form && form.tagName === 'FORM') {
+          // Check if it's not our own form
+          const isOwnForm = form.closest('.exam-page')
+          if (!isOwnForm) {
+            e.preventDefault()
+            e.stopPropagation()
+            setShowNavigationModal(true)
+          }
+        }
+      }
+    }
+
     // Push initial state when exam starts
-    if (examStarted) {
+    if (examDoing) {
       // Disable scroll restoration
       if (window.history.scrollRestoration) {
         window.history.scrollRestoration = 'manual'
       }
 
+      // Push multiple states to make it harder to navigate away accidentally
       window.history.pushState(null, '', window.location.pathname + window.location.search)
+      
+      // Add event listeners
       window.addEventListener('popstate', handlePopState)
       window.addEventListener('beforeunload', handleBeforeUnload)
+      window.addEventListener('unload', handleUnload)
       document.addEventListener('click', handleClick, true) // Use capture phase
-    }
+      document.addEventListener('submit', handleSubmit, true) // Capture form submissions
 
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      document.removeEventListener('click', handleClick, true)
-      // Restore default scroll restoration
-      if (window.history.scrollRestoration) {
-        window.history.scrollRestoration = 'auto'
+      // Periodically push state to maintain history lock
+      const historyInterval = setInterval(() => {
+        if (examDoing && !isNavigatingAway.current) {
+          window.history.pushState(null, '', window.location.pathname + window.location.search)
+        }
+      }, 500)
+
+      return () => {
+        clearInterval(historyInterval)
+        window.removeEventListener('popstate', handlePopState)
+        window.removeEventListener('beforeunload', handleBeforeUnload)
+        window.removeEventListener('unload', handleUnload)
+        document.removeEventListener('click', handleClick, true)
+        document.removeEventListener('submit', handleSubmit, true)
+        // Restore default scroll restoration
+        if (window.history.scrollRestoration) {
+          window.history.scrollRestoration = 'auto'
+        }
       }
     }
-  }, [examStarted])
+  }, [examDoing, examId])
 
   const clearExamStorage = () => {
     console.log('Clearing exam storage. Exam ID:', examId)
     sessionStorage.removeItem('currentExam')
     sessionStorage.removeItem('examAnswers')
     sessionStorage.removeItem('examStartTime')
-    sessionStorage.removeItem('examTimeRemaining')
-    sessionStorage.removeItem('examStarted')
+    sessionStorage.removeItem('examDoing')
   }
 
   const formatTime = (seconds) => {
@@ -356,6 +419,7 @@ function Exam() {
           Authorization: `Bearer ${user.access_token}`,
         },
         body: JSON.stringify({
+          user_id: userInfo.sub,
           examData,
           answers,
           examStartTime,
@@ -369,6 +433,10 @@ function Exam() {
 
       const result = await response.json()
       console.log('Submission successful:', result)
+
+      // Set examDoing to false and remove examTimeRemaining
+      sessionStorage.setItem('examDoing', 'false')
+      sessionStorage.removeItem('examTimeRemaining')
 
       // Set flag to allow navigation
       isNavigatingAway.current = true
@@ -465,7 +533,7 @@ function Exam() {
           group.subquestions.forEach((_, subIdx) => {
             questions.push({
               num: questionNum++,
-              id: `fill-short-${group.id}-${subIdx}`,
+              id: `${group.id}-${subIdx}`,
               type: 'fill_short'
             })
           })
@@ -480,7 +548,7 @@ function Exam() {
           group.subquestions.forEach((_, subIdx) => {
             questions.push({
               num: questionNum++,
-              id: `reorder-${group.id}-${subIdx}`,
+              id: `${group.id}-${subIdx}`,
               type: 'reorder'
             })
           })
@@ -495,7 +563,7 @@ function Exam() {
           group.subquestions.forEach((_, subIdx) => {
             questions.push({
               num: questionNum++,
-              id: `fill-long-${group.id}-${subIdx}`,
+              id: `${group.id}-${subIdx}`,
               type: 'fill_long'
             })
           })
@@ -510,7 +578,7 @@ function Exam() {
           group.subquestions.forEach((_, subIdx) => {
             questions.push({
               num: questionNum++,
-              id: `reading-${group.id}-${subIdx}`,
+              id: `${group.id}-${subIdx}`,
               type: 'reading'
             })
           })
@@ -546,9 +614,38 @@ function Exam() {
 
   const allQuestions = getAllQuestions()
 
+  // TEST FUNCTION - Select all C answers
+  const selectAllC = () => {
+    const newAnswers = {}
+    allQuestions.forEach(q => {
+      newAnswers[q.id] = 'C'
+    })
+    setAnswers(newAnswers)
+  }
+
   return (
     <div className="exam-page">
       <TopBar userInfo={userInfo} hideLogout={true} />
+
+      {/* TEST BUTTON - Remove in production */}
+      {examDoing && (
+        <div style={{
+          position: 'fixed',
+          top: '70px',
+          right: '20px',
+          zIndex: 9999,
+          background: '#ff6b6b',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+        }} onClick={selectAllC}>
+          TEST: Select All C
+        </div>
+      )}
 
       {/* Notification */}
       {notification && (
@@ -615,18 +712,11 @@ function Exam() {
 
                 {/* Table of Contents */}
                 <div className="sidebar-section question-list-section">
-                  <h3 className="sidebar-title">Danh sách câu hỏi</h3>
-                  <div className="question-grid">
-                    {allQuestions.map(q => (
-                      <button
-                        key={q.id}
-                        onClick={() => scrollToQuestion(q.num)}
-                        className={`question-btn ${answers[q.id] ? 'answered' : ''}`}
-                      >
-                        {q.num}
-                      </button>
-                    ))}
-                  </div>
+                  <QuestionsList
+                    allQuestions={allQuestions}
+                    answers={answers}
+                    onQuestionClick={scrollToQuestion}
+                  />
                 </div>
 
                 {/* Submit Button */}
@@ -648,7 +738,6 @@ function Exam() {
                     Điền từ ngắn
                   </h2>
                   {examData.groups.fill_short.map((group, groupIdx) => {
-                    console.log(`Group ${group.id} has ${group.subquestions.length} subquestions.`)
                     let questionNum = 0
 
                     // Calculate question number offset
@@ -663,7 +752,7 @@ function Exam() {
                         </div>
                         {group.subquestions.map((subq, subIdx) => {
                           const currentQuestionNum = questionNum + subIdx + 1
-                          const questionId = `fill-short-${group.id}-${subIdx}`
+                          const questionId = `${group.id}-${subIdx}`
                           return (
                             <div key={subIdx} id={`question-${currentQuestionNum}`} className="sub-question">
                               <div className="question-header">
@@ -727,7 +816,7 @@ function Exam() {
                         )}
                         {group.subquestions.map((subq, subIdx) => {
                           const currentQuestionNum = questionNum + subIdx + 1
-                          const questionId = `reorder-${group.id}-${subIdx}`
+                          const questionId = `${group.id}-${subIdx}`
                           return (
                             <div key={subIdx} id={`question-${currentQuestionNum}`} className="sub-question">
                               <div className="question-header">
@@ -799,7 +888,7 @@ function Exam() {
                         </div>
                         {group.subquestions.map((subq, subIdx) => {
                           const currentQuestionNum = questionNum + subIdx + 1
-                          const questionId = `fill-long-${group.id}-${subIdx}`
+                          const questionId = `${group.id}-${subIdx}`
                           return (
                             <div key={subIdx} id={`question-${currentQuestionNum}`} className="sub-question">
                               <div className="question-header">
@@ -875,7 +964,7 @@ function Exam() {
                         </div>
                         {group.subquestions.map((subq, subIdx) => {
                           const currentQuestionNum = questionNum + subIdx + 1
-                          const questionId = `reading-${group.id}-${subIdx}`
+                          const questionId = `${group.id}-${subIdx}`
                           return (
                             <div key={subIdx} id={`question-${currentQuestionNum}`} className="sub-question">
                               <div className="question-header">
@@ -907,13 +996,6 @@ function Exam() {
                   })}
                 </div>
               )}
-
-              {/* Submit Button at end of exam */}
-              <div className="exam-submit-section">
-                <button onClick={handleSubmitClick} className="btn-submit-exam">
-                  Nộp bài
-                </button>
-              </div>
             </div>
           </div>
         ) : null}

@@ -28,14 +28,15 @@ def lambda_handler(event, context):
         # Parse the request body
         body = json.loads(event['body'])
         exam_data = body.get('examData', {})
-        user_answers = body.get('answers', {})
+        user_answers = body.get('answers', {})  # Format: {"groupId-subIdx": "A", ...}
         exam_start_time = body.get('examStartTime')
+        submission_time = datetime.utcnow().isoformat()
 
         # --- Grading Logic ---
         question_list_for_db = []
         correct_count = 0
 
-        def grade_group(group_type, groups, user_answers):
+        def grade_group(groups, user_answers):
             nonlocal correct_count
             
             graded_qs = []
@@ -46,16 +47,17 @@ def lambda_handler(event, context):
                 group_id = group.get('id')
                 subquestions = group.get('subquestions', [])
                 for i, sub_q in enumerate(subquestions):
-                    # Reconstruct the question ID as the frontend does to find the user's answer
-                    question_id = f"{group_type}-{group_id}-{i}"
+                    # Question ID format from frontend: "groupId-subIdx"
+                    question_id = f"{group_id}-{i}"
                     user_choice = user_answers.get(question_id)
                     correct_answer = sub_q.get('correct_answer')
                     
                     if user_choice == correct_answer:
                         correct_count += 1
                     
-                    # Use group_id and index for storing in the database
+                    # Store question data in database
                     graded_qs.append({
+                        'question_id': question_id,
                         'group_id': group_id,
                         'subquestion_index': i,
                         'correct_answer': correct_answer,
@@ -64,10 +66,10 @@ def lambda_handler(event, context):
             return graded_qs
 
         # Grade questions in the same order as the frontend to ensure IDs match
-        question_list_for_db.extend(grade_group('fill_short', exam_data.get('groups', {}).get('fill_short'), user_answers))
-        question_list_for_db.extend(grade_group('reorder', exam_data.get('reorder_questions'), user_answers))
-        question_list_for_db.extend(grade_group('fill_long', exam_data.get('groups', {}).get('fill_long'), user_answers))
-        question_list_for_db.extend(grade_group('reading', exam_data.get('groups', {}).get('reading'), user_answers))
+        question_list_for_db.extend(grade_group(exam_data.get('groups', {}).get('fill_short'), user_answers))
+        question_list_for_db.extend(grade_group(exam_data.get('reorder_questions'), user_answers))
+        question_list_for_db.extend(grade_group(exam_data.get('groups', {}).get('fill_long'), user_answers))
+        question_list_for_db.extend(grade_group(exam_data.get('groups', {}).get('reading'), user_answers))
         
         total_questions = len(question_list_for_db)
 
@@ -83,10 +85,12 @@ def lambda_handler(event, context):
             'exam_id': int(exam_id),
             'user_id': user_id,
             'exam_start_time': exam_start_time,
-            'exam_finish_time': datetime.utcnow().isoformat(),
+            'exam_finish_time': submission_time,
             'correct_count': correct_count,
             'total_questions': total_questions,
-            'questions': question_list_for_db
+            'questions': question_list_for_db,
+            'exam_data': exam_data,  # Store full exam data from currentExam
+            'user_answers': user_answers  # Store user answers from examAnswers
         }
 
         # --- Save to DynamoDB ---

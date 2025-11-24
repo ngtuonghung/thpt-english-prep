@@ -3,16 +3,24 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(61, 61, 61, 0.1);
   padding: 1.25rem 0;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: 80px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .dashboard-header .container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 2rem;
 }
 
 .logo {

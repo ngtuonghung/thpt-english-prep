@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import './Submission.css'
 import TopBar from '../components/TopBar'
+import QuestionsList from '../components/QuestionsList'
 
 const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
 const CHAT_API = 'https://e9hi4aqre3.execute-api.ap-southeast-1.amazonaws.com/v2/chat'
@@ -19,6 +20,7 @@ function Submission() {
   const [examData, setExamData] = useState(null)
   const [answers, setAnswers] = useState(null)
   const [examStartTime, setExamStartTime] = useState(null)
+  const [examFinishTime, setExamFinishTime] = useState(null)
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
@@ -44,6 +46,8 @@ function Submission() {
             if (savedStartTime) {
                 setExamStartTime(new Date(savedStartTime));
             }
+            // Set finish time to now (when submission page loads)
+            setExamFinishTime(new Date());
         } catch (error) {
             console.error("Failed to parse exam/answer data from session storage", error);
             navigate('/dashboard');
@@ -76,6 +80,14 @@ function Submission() {
     return `${hours}:${minutes} - ${day}/${month}/${year}`
   }
 
+  const calculateDuration = (startTime, finishTime) => {
+    if (!startTime || !finishTime) return 'N/A'
+    const durationMs = finishTime - startTime
+    const minutes = Math.floor(durationMs / 60000)
+    const seconds = Math.floor((durationMs % 60000) / 1000)
+    return `${minutes} phút ${seconds} giây`
+  }
+
   const scrollToQuestion = (questionNum) => {
     const element = document.getElementById(`question-${questionNum}`)
     if (element) {
@@ -102,7 +114,7 @@ function Submission() {
             {
               id: 1,
               sender: 'ai',
-              text: 'Xin chào! Tôi có thể giúp gì cho bạn về câu hỏi này?',
+              text: '👋 Xin chào! Tôi là trợ lý AI của bạn.\n\n💡 Tôi có thể giúp bạn:\n• Giải thích đáp án chi tiết\n• Phân tích các lựa chọn khác\n• Cung cấp kiến thức bổ sung\n\nHãy hỏi tôi bất cứ điều gì về câu hỏi này nhé! 😊',
               timestamp: new Date()
             }
           ]
@@ -134,7 +146,7 @@ function Submission() {
         group.subquestions.forEach((subq, subIdx) => {
           questions.push({
             num: questionNum++,
-            id: `fill-short-${group.id}-${subIdx}`,
+            id: `${group.id}-${subIdx}`,
             type: 'fill_short',
             data: subq,
             context: group.context,
@@ -150,7 +162,7 @@ function Submission() {
         group.subquestions.forEach((subq, subIdx) => {
           questions.push({
             num: questionNum++,
-            id: `reorder-${group.id}-${subIdx}`,
+            id: `${group.id}-${subIdx}`,
             type: 'reorder',
             data: subq,
             context: group.context && group.context !== '_' ? group.context : null,
@@ -166,7 +178,7 @@ function Submission() {
         group.subquestions.forEach((subq, subIdx) => {
           questions.push({
             num: questionNum++,
-            id: `fill-long-${group.id}-${subIdx}`,
+            id: `${group.id}-${subIdx}`,
             type: 'fill_long',
             data: subq,
             context: group.context,
@@ -182,7 +194,7 @@ function Submission() {
         group.subquestions.forEach((subq, subIdx) => {
           questions.push({
             num: questionNum++,
-            id: `reading-${group.id}-${subIdx}`,
+            id: `${group.id}-${subIdx}`,
             type: 'reading',
             data: subq,
             context: group.context,
@@ -265,7 +277,7 @@ function Submission() {
             {
               id: loadingId,
               sender: 'ai',
-              text: 'Đang suy nghĩ...',
+              text: '<div class="typing-indicator"><span></span><span></span><span></span></div>',
               timestamp: new Date(),
               loading: true
             }
@@ -500,107 +512,140 @@ function Submission() {
       <TopBar userInfo={userInfo} />
 
       <main className="submission-main">
-        <div className={`submission-container ${activeChatQuestion ? 'split-view' : ''}`}>
-          {/* Left Pane - Questions */}
-          <div className="questions-pane">
-            <div className="pane-header">
-              <h2>Kết quả làm bài</h2>
-              <div className="score-summary">
-                <span className="score-text">Điểm: {calculateScore.correct}/{calculateScore.total}</span>
-                <span className="score-percent">{calculateScore.percentage}%</span>
-              </div>
-            </div>
-
-            <div className="questions-content">
-              {/* Exam Info */}
-              <div className="exam-info-card">
-                <div className="info-row">
-                  <span className="info-label">Mã đề:</span>
-                  <span className="info-value">{examData.quiz_id}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Tổng câu hỏi:</span>
-                  <span className="info-value">{allQuestions.length}</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Hoàn thành lúc:</span>
-                  <span className="info-value">{formatDateTime(new Date())}</span>
+        <div className={`submission-container ${activeChatQuestion ? 'with-chat' : ''}`}>
+          {/* Sidebar */}
+          <aside className="submission-sidebar">
+            <div className="sidebar-content">
+              {/* Score Summary */}
+              <div className="sidebar-section">
+                <h3 className="sidebar-title">Kết quả</h3>
+                <div className="quiz-info">
+                  <div className="quiz-info-item">
+                    <span className="quiz-label">Điểm:</span>
+                    <span className="quiz-value">{calculateScore.correct}/{calculateScore.total}</span>
+                  </div>
+                  <div className="quiz-info-item">
+                    <span className="quiz-label">Phần trăm:</span>
+                    <span className="quiz-value">{calculateScore.percentage}%</span>
+                  </div>
                 </div>
               </div>
 
               {/* Questions List */}
-              {allQuestions.map((question, index) => renderQuestion(question, index))}
-
-              {/* Back Button */}
-              <button onClick={handleBackToDashboard} className="btn-back-dashboard">
-                Quay lại Dashboard
-              </button>
+              <div className="sidebar-section question-list-section">
+                <QuestionsList
+                  allQuestions={allQuestions}
+                  answers={answers}
+                  onQuestionClick={scrollToQuestion}
+                />
+              </div>
             </div>
+          </aside>
+
+          {/* Questions Content */}
+          <div className="submission-content">
+            {/* Exam Info */}
+            <div className="exam-info-card">
+              <div className="info-row">
+                <span className="info-label">Kết quả:</span>
+                <span className="info-value">
+                  <span className="score-text">Điểm: {calculateScore.correct}/{calculateScore.total}</span>
+                  <span className="score-percent">{calculateScore.percentage}%</span>
+                </span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Mã đề:</span>
+                <span className="info-value">{examData.quiz_id}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Bắt đầu:</span>
+                <span className="info-value">{formatDateTime(examStartTime)}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Kết thúc:</span>
+                <span className="info-value">{formatDateTime(examFinishTime)}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Thời gian làm bài:</span>
+                <span className="info-value">{calculateDuration(examStartTime, examFinishTime)}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Tổng câu hỏi:</span>
+                <span className="info-value">{allQuestions.length}</span>
+              </div>
+            </div>
+
+            {/* Questions List */}
+            {allQuestions.map((question, index) => renderQuestion(question, index))}
+
+            {/* Back Button */}
+            <button onClick={handleBackToDashboard} className="btn-back-dashboard">
+              Quay lại Dashboard
+            </button>
           </div>
 
-          {/* Right Pane - Chat */}
-          {activeChatQuestion && (
-            <div className="chat-pane">
-              <div className="chat-header">
-                <div className="chat-title">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span>Chat với AI - Câu {allQuestions.find(q => q.id === activeChatQuestion)?.num}</span>
+          {/* Chat Pane - Always rendered, visibility controlled by CSS */}
+          <div className="chat-pane">
+            <div className="chat-header">
+              <div className="chat-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Chat với AI - Câu {allQuestions.find(q => q.id === activeChatQuestion)?.num}</span>
+              </div>
+              <button
+                className="close-chat-btn"
+                onClick={() => setActiveChatQuestion(null)}
+                title="Đóng chat"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="chat-messages" ref={chatMessagesRef}>
+              {currentChatSession?.messages.map(message => (
+                <div key={message.id} className={`chat-message ${message.sender}`}>
+                  <div className="message-avatar">
+                    {message.sender === 'ai' ? '🤖' : '👤'}
+                  </div>
+                  <div className="message-content">
+                    <div
+                      className={`message-text ${message.loading ? 'loading' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: message.text }}
+                    />
+                    <div className="message-time">
+                      {message.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <div className="chat-input-area">
+              <div className="chat-input-wrapper">
+                <textarea
+                  value={chatInput}
+                  onChange={handleTextareaChange}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Nhập câu hỏi... (Enter: gửi, Shift+Enter: xuống dòng)"
+                  rows={1}
+                />
                 <button
-                  className="close-chat-btn"
-                  onClick={() => setActiveChatQuestion(null)}
-                  title="Đóng chat"
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim()}
+                  className="send-btn"
+                  title="Gửi tin nhắn"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
                   </svg>
                 </button>
               </div>
-
-              <div className="chat-messages" ref={chatMessagesRef}>
-                {currentChatSession?.messages.map(message => (
-                  <div key={message.id} className={`chat-message ${message.sender}`}>
-                    <div className="message-avatar">
-                      {message.sender === 'ai' ? '🤖' : '👤'}
-                    </div>
-                    <div className="message-content">
-                      <div
-                        className={`message-text ${message.loading ? 'loading' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: message.text }}
-                      />
-                      <div className="message-time">
-                        {message.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="chat-input-area">
-                <div className="chat-input-wrapper">
-                  <textarea
-                    value={chatInput}
-                    onChange={handleTextareaChange}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Gửi tin nhắn..."
-                    rows={1}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim()}
-                    className="send-btn"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
             </div>
-          )}
+          </div>
         </div>
       </main>
     </div>

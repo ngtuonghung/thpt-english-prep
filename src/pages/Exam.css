@@ -2,11 +2,19 @@
 .exam-page {
   min-height: 100vh;
   background: #F1E9D2;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .exam-main {
   padding: 0;
   position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Countdown Overlay */
@@ -124,8 +132,9 @@
 /* Exam Container */
 .exam-container {
   display: flex;
-  min-height: calc(100vh - 80px);
+  flex: 1;
   gap: 0;
+  overflow: hidden;
 }
 
 /* Sidebar */
@@ -133,9 +142,7 @@
   width: 280px;
   background: rgba(255, 255, 255, 0.7);
   border-right: 1px solid rgba(61, 61, 61, 0.1);
-  position: sticky;
-  top: 80px;
-  height: calc(100vh - 80px);
+  position: relative;
   overflow: hidden;
   flex-shrink: 0;
   display: flex;

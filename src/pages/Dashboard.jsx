@@ -269,7 +269,7 @@ export default function Dashboard() {
       sessionStorage.removeItem('examAnswers')
       sessionStorage.removeItem('examStartTime')
       sessionStorage.removeItem('examTimeRemaining')
-      sessionStorage.removeItem('examStarted')
+      sessionStorage.removeItem('examDoing')
       sessionStorage.removeItem('submissionResult')
 
       // Save exam data to session storage
@@ -277,6 +277,9 @@ export default function Dashboard() {
         id: examId,
         data: body
       }))
+      
+      // Initialize examDoing to true for new exam
+      sessionStorage.setItem('examDoing', 'true')
 
       console.log('Exam created with ID:', examId)
 
