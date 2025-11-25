@@ -165,10 +165,16 @@ function Exam() {
 
   // Save answers to session storage whenever they change
   useEffect(() => {
-    if (examDoing && Object.keys(answers).length > 0) {
-      sessionStorage.setItem('examAnswers', JSON.stringify(answers))
+    if (examDoing && examData) {
+      // Build complete answers object with all question IDs
+      const allQuestions = getAllQuestions()
+      const completeAnswers = {}
+      allQuestions.forEach(q => {
+        completeAnswers[q.id] = answers[q.id] || ''
+      })
+      sessionStorage.setItem('examAnswers', JSON.stringify(completeAnswers))
     }
-  }, [answers, examDoing])
+  }, [answers, examDoing, examData])
 
   // Save time remaining to session storage
   useEffect(() => {
@@ -453,6 +459,20 @@ function Exam() {
     setShowSubmitModal(false) // Close modal immediately
 
     try {
+      // Build complete answers object with all question IDs (including unanswered ones)
+      const allQuestions = getAllQuestions()
+      const completeAnswers = {}
+      allQuestions.forEach(q => {
+        // Use user's answer if they answered, otherwise empty string
+        completeAnswers[q.id] = answers[q.id] || ''
+      })
+
+      console.log('Submitting answers:', {
+        totalQuestions: allQuestions.length,
+        answeredQuestions: Object.keys(answers).length,
+        completeAnswers
+      })
+
       const response = await fetch(`${'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'}/submission`, {
         method: 'POST',
         headers: {
@@ -462,7 +482,7 @@ function Exam() {
         body: JSON.stringify({
           user_id: userInfo.sub,
           exam_id: examId,
-          answers,
+          answers: completeAnswers,
           examStartTime,
         }),
       })
