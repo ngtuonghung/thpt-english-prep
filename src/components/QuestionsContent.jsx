@@ -11,9 +11,10 @@ function QuestionsContent({
   examData,
   answers = {},
   mode = 'exam', // 'exam' or 'submission'
-  onAnswerSelect = null, // For exam mode
+  onAnswerSelect = null, // For exam mode and review mode
   onChatBubbleClick = null, // For submission mode
   activeChatQuestion = null, // For submission mode
+  showResultsAlways = false, // For submission mode - always show results even if not answered
 }) {
   // Render markdown helper
   const renderMarkdown = useCallback((text) => {
@@ -125,15 +126,10 @@ function QuestionsContent({
     const isSubmissionMode = mode === 'submission'
 
     return (
-      <div key={questionId} id={`question-${question.num}`} className={isSubmissionMode ? 'question-card' : 'sub-question'}>
-        <div className={isSubmissionMode ? 'question-header-row' : 'question-header'}>
-          <div className={isSubmissionMode ? 'question-header' : null}>
+      <div key={questionId} id={`question-${question.num}`} className="sub-question">
+        <div className="question-header">
+          <div>
             <span className="question-number">Câu {question.num}</span>
-            {isSubmissionMode && (
-              <span className={`answer-indicator ${isCorrect ? 'correct' : 'incorrect'}`}>
-                {isCorrect ? '✓ Đúng' : isEmptyAnswer ? '○ Chưa trả lời' : '✗ Sai'}
-              </span>
-            )}
           </div>
           {isSubmissionMode && onChatBubbleClick && (
             <button
@@ -182,13 +178,13 @@ function QuestionsContent({
             let optionClass = 'option-item'
 
             if (isSubmissionMode) {
-              // Submission mode styling
+              // Submission mode styling - show results if answered OR if showResultsAlways is true
               if (isUserAnswer && isCorrect) {
                 optionClass += ' user-answer-correct'
               } else if (isUserAnswer && !isCorrect) {
                 optionClass += ' user-answer-incorrect'
               }
-              if ((isEmptyAnswer || !isCorrect) && isCorrectAnswer) {
+              if ((showResultsAlways || !isEmptyAnswer) && !isCorrect && isCorrectAnswer) {
                 optionClass += ' correct-answer-highlight'
               }
             } else {
@@ -201,7 +197,7 @@ function QuestionsContent({
             return (
               <div
                 key={optIdx}
-                onClick={() => mode === 'exam' && onAnswerSelect && onAnswerSelect(questionId, optionLetter)}
+                onClick={() => onAnswerSelect && onAnswerSelect(questionId, optionLetter)}
                 className={optionClass}
               >
                 <span className="option-label">{optionLetter}.</span>
@@ -214,7 +210,7 @@ function QuestionsContent({
                     {isUserAnswer && !isCorrect && (
                       <span className="option-badge incorrect">✗ Bạn chọn sai</span>
                     )}
-                    {(isEmptyAnswer || !isCorrect) && isCorrectAnswer && (
+                    {(showResultsAlways || !isEmptyAnswer) && !isCorrect && isCorrectAnswer && (
                       <span className="option-badge correct-ans">✓ Đáp án đúng</span>
                     )}
                   </>
@@ -223,6 +219,19 @@ function QuestionsContent({
             )
           })}
         </div>
+
+        {/* Show explanation only if user has answered this question (or showResultsAlways is true) */}
+        {isSubmissionMode && questionData.explanation && (showResultsAlways || !isEmptyAnswer) && (
+          <div className={`explanation-box ${isCorrect ? 'explanation-correct' : 'explanation-incorrect'}`}>
+            <div className="explanation-title">
+              {isCorrect ? '✓ Giải thích' : '✗ Giải thích'}
+            </div>
+            <div
+              className="explanation-text"
+              dangerouslySetInnerHTML={renderMarkdown(questionData.explanation)}
+            />
+          </div>
+        )}
       </div>
     )
   }, [answers, mode, onAnswerSelect, onChatBubbleClick, activeChatQuestion, renderMarkdown])
@@ -321,7 +330,7 @@ function QuestionsContent({
         <div className="question-section">
           <h2 className="section-title">
             <span className="section-number">Phần 3</span>
-            Điền từ dài
+            Điền câu
           </h2>
           {renderQuestionsWithContext(questionsByType.fill_long)}
         </div>

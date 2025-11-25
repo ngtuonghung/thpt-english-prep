@@ -1,0 +1,148 @@
+{
+  "id": {
+    "N": "1763992302777566"
+  },
+  "context": {
+    "S": "In recent years, artificial intelligence (AI) has been widely applied in various fields, including healthcare, finance, and education. AI systems are now (18) _____. Despite these advancements, there are still concerns about the ethical use of AI, particularly in (19) _____.\nMany organizations are adopting AI technologies (20) _____. These technologies have the potential to transform industries, but experts emphasize that AI should complement human abilities rather than replace them. For example, in education, AI can (21) _____, allowing teachers to focus on other\nimportant aspects of teaching. However, it remains crucial to ensure that AI (22) _____."
+  },
+  "question_type": {
+    "S": "fill_long"
+  },
+  "subquestions": {
+    "L": [
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "C"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. being integrating into critical industries that handle complex decision – making processes"
+              },
+              {
+                "S": "B. integrated in workflows where human input is gradually becoming unnecessary"
+              },
+              {
+                "S": "C. being integrated into systems designed to automate repetitive and data – driven tasks"
+              },
+              {
+                "S": "D. being integrate into systems which still depend on human supervision"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "A"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. making decisions which traditionally relied on human expertise"
+              },
+              {
+                "S": "B. to make decisions that required careful consideration and judgment"
+              },
+              {
+                "S": "C. making of decisions that influence significant outcomes in various sectors"
+              },
+              {
+                "S": "D. make decisions in situations that require ethical responsibility"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "C"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. with aim improve processes and increase productivity"
+              },
+              {
+                "S": "B. in order improving operations across various departments"
+              },
+              {
+                "S": "C. in order to improve efficiency and reduce human mistakes"
+              },
+              {
+                "S": "D. with the goal of to enhancing performance and minimizing errors"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "C"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. helps performing automated grading and feedback tasks"
+              },
+              {
+                "S": "B. be applied to doing various tasks in educational settings"
+              },
+              {
+                "S": "C. perform tasks like grading and giving feedback for students"
+              },
+              {
+                "S": "D. performs tasks to providing real – time feedback to students"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "C"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. operates in a manner which respects human oversight"
+              },
+              {
+                "S": "B. operate with consistent regulations to guarantee fairness"
+              },
+              {
+                "S": "C. operates consistently to ensure that ethical standards are met"
+              },
+              {
+                "S": "D. are operating according to principles of fairness and transparency"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "type": {
+    "N": "1"
+  }
+}

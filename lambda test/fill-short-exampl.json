@@ -1,0 +1,174 @@
+{
+  "id": {
+    "N": "1763992300399784"
+  },
+  "context": {
+    "S": "Save the Earth, One Step at a Time!\nLet's explore what we can do in our daily lives to help protect the environment.\nKey Facts:\n- Every year, over 8 million tonnes of plastic enter our oceans, threatening (7) _____ life and\n\necosystems.\n- Transport is a significant contributor to greenhouse gas emissions, especially air travel, which can\n\naccount for up to 10% of your yearly carbon footprint.\nWhat You Can Do:\n1. Eat Sustainably**: Choose a plant-based diet when possible. Reducing meat and dairy consumption not only (8) _____ on greenhouse gas emissions (9) _____ also helps prevent deforestation for animal feed crops.\n2. Reduce Waste**: Avoid single-use plastics. Opt for reusable bags, containers, and water bottles. Every time you (10) _____, you prevent more plastic waste from ending up in landfills or oceans.\n3. Travel Responsibly**: Whenever possible, walk or bike short distances. If traveling longer distances,\n(11) _____ public transport or trains instead of flights to save a large (12) _____ of carbon\nemissions."
+  },
+  "question_type": {
+    "S": "fill_short"
+  },
+  "subquestions": {
+    "L": [
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "C"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. aquatic"
+              },
+              {
+                "S": "B. wildlife"
+              },
+              {
+                "S": "C. marine"
+              },
+              {
+                "S": "D. coastal"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "B"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. gets down"
+              },
+              {
+                "S": "B. cuts down"
+              },
+              {
+                "S": "C. breaks up"
+              },
+              {
+                "S": "D. breaks down"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "D"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. and"
+              },
+              {
+                "S": "B. or"
+              },
+              {
+                "S": "C. so"
+              },
+              {
+                "S": "D. but"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "A"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. reuse"
+              },
+              {
+                "S": "B. recycle"
+              },
+              {
+                "S": "C. reduce"
+              },
+              {
+                "S": "D. refill"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "B"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. avoid"
+              },
+              {
+                "S": "B. consider"
+              },
+              {
+                "S": "C. ignore"
+              },
+              {
+                "S": "D. prefer"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "M": {
+          "content": {
+            "S": ""
+          },
+          "correct_answer": {
+            "S": "D"
+          },
+          "options": {
+            "L": [
+              {
+                "S": "A. other"
+              },
+              {
+                "S": "B. many"
+              },
+              {
+                "S": "C. much"
+              },
+              {
+                "S": "D. amount"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "type": {
+    "N": "1"
+  }
+}

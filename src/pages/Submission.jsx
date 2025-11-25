@@ -7,7 +7,7 @@ import ConfirmModal from '../components/ConfirmModal'
 import QuestionsContent from '../components/QuestionsContent'
 
 const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
-const CHAT_API = 'https://e9hi4aqre3.execute-api.ap-southeast-1.amazonaws.com/v2/chat'
+const CHAT_API = 'https://cr45imuuf0.execute-api.ap-southeast-1.amazonaws.com/v2/chat'
 
 function Submission() {
   const [searchParams] = useSearchParams()
@@ -950,6 +950,7 @@ function Submission() {
               mode="submission"
               onChatBubbleClick={handleChatBubbleClick}
               activeChatQuestion={activeChatQuestion}
+              showResultsAlways={true}
             />
           </div>
 
