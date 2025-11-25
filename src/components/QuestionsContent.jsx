@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import './QuestionsContent.css'
 
 /**
@@ -16,6 +16,9 @@ function QuestionsContent({
   activeChatQuestion = null, // For submission mode
   showResultsAlways = false, // For submission mode - always show results even if not answered
 }) {
+  // State to track streaming explanations
+  const [streamingExplanations, setStreamingExplanations] = useState({})
+
   // Render markdown helper
   const renderMarkdown = useCallback((text) => {
     if (!text) return { __html: '' }
@@ -115,6 +118,65 @@ function QuestionsContent({
 
   const allQuestions = useMemo(() => getAllQuestionsWithData(), [getAllQuestionsWithData])
 
+  // Stream explanation effect
+  useEffect(() => {
+    const isSubmissionMode = mode === 'submission'
+    if (!isSubmissionMode) return
+
+    allQuestions.forEach(question => {
+      const questionId = question.id
+      const userAnswer = answers?.[questionId]
+      const hasExplanation = question.data?.explanation
+      const isEmptyAnswer = !userAnswer
+      const shouldShowExplanation = hasExplanation && (showResultsAlways || !isEmptyAnswer)
+
+      // Only stream if explanation should be shown and hasn't been streamed yet
+      if (shouldShowExplanation && !streamingExplanations[questionId]) {
+        const fullText = question.data.explanation
+        const words = fullText.split(' ')
+        let currentIndex = 0
+
+        // Mark as streaming
+        setStreamingExplanations(prev => ({
+          ...prev,
+          [questionId]: { text: '', streaming: true, fullText }
+        }))
+
+        const streamInterval = setInterval(() => {
+          if (currentIndex < words.length) {
+            setStreamingExplanations(prev => {
+              const current = prev[questionId]
+              if (!current) return prev
+
+              const newText = words.slice(0, currentIndex + 1).join(' ')
+              return {
+                ...prev,
+                [questionId]: {
+                  ...current,
+                  text: newText
+                }
+              }
+            })
+            currentIndex++
+          } else {
+            // Streaming complete
+            clearInterval(streamInterval)
+            setStreamingExplanations(prev => ({
+              ...prev,
+              [questionId]: {
+                text: fullText,
+                streaming: false,
+                fullText
+              }
+            }))
+          }
+        }, 30) // 30ms per word for smooth animation
+
+        return () => clearInterval(streamInterval)
+      }
+    })
+  }, [allQuestions, answers, mode, showResultsAlways, streamingExplanations])
+
   // Render a single question
   const renderQuestion = useCallback((question, questionData) => {
     const questionId = question.id
@@ -212,15 +274,21 @@ function QuestionsContent({
             <div className="explanation-title">
               {isCorrect ? '✓ Giải thích' : '✗ Giải thích'}
             </div>
-            <div
-              className="explanation-text"
-              dangerouslySetInnerHTML={renderMarkdown(questionData.explanation)}
-            />
+            <div className="explanation-text">
+              {streamingExplanations[questionId]?.streaming ? (
+                <>
+                  <span dangerouslySetInnerHTML={renderMarkdown(streamingExplanations[questionId]?.text || '')} />
+                  <span className="streaming-cursor">▊</span>
+                </>
+              ) : (
+                <span dangerouslySetInnerHTML={renderMarkdown(streamingExplanations[questionId]?.text || questionData.explanation)} />
+              )}
+            </div>
           </div>
         )}
       </div>
     )
-  }, [answers, mode, onAnswerSelect, onChatBubbleClick, activeChatQuestion, renderMarkdown])
+  }, [answers, mode, onAnswerSelect, onChatBubbleClick, activeChatQuestion, renderMarkdown, showResultsAlways, streamingExplanations])
 
   // Group questions by context for rendering
   const renderQuestionsWithContext = useCallback((questions) => {

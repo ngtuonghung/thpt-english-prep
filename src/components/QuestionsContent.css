@@ -520,3 +520,21 @@
   color: #6b7d8e;
   font-style: italic;
 }
+
+/* Streaming cursor animation */
+.streaming-cursor {
+  display: inline-block;
+  animation: blink 0.8s infinite;
+  color: #8b6f47;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
