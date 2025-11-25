@@ -176,6 +176,9 @@ function QuestionsContent({
             const isUserAnswer = userAnswer === optionLetter
             const isCorrectAnswer = correctAnswer === optionLetter
 
+            // Remove the first 3 characters (e.g., "A. ", "B. ", etc.) from option text
+            const optionText = option.length > 3 ? option.substring(3) : option
+
             let optionClass = 'option-item'
 
             if (isSubmissionMode) {
@@ -202,7 +205,7 @@ function QuestionsContent({
                 className={optionClass}
               >
                 <span className="option-label">{optionLetter}.</span>
-                <span className="option-text">{option}</span>
+                <span className="option-text">{optionText}</span>
                 {isSubmissionMode && (
                   <>
                     {isUserAnswer && isCorrect && (
