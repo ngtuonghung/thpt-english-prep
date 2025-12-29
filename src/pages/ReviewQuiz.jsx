@@ -4,7 +4,7 @@ import './ReviewQuiz.css'
 import TopBar from '../components/TopBar'
 import QuestionsContent from '../components/QuestionsContent'
 
-const GEN_EXAM_API = 'https://cr45imuuf0.execute-api.ap-southeast-1.amazonaws.com/v2/gen-exam'
+const GEN_EXAM_API = 'https://i4lm3r2a0d.execute-api.ap-southeast-1.amazonaws.com/v1/gen'
 
 export default function ReviewQuiz() {
   const navigate = useNavigate()
@@ -125,7 +125,7 @@ export default function ReviewQuiz() {
       }
 
       if (idToken) {
-        headers['Authorization'] = idToken
+        headers['Authorization'] = `Bearer ${idToken}`
       }
 
       const response = await fetch(GEN_EXAM_API, {

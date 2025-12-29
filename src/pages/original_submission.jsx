@@ -6,8 +6,8 @@ import QuestionsList from '../components/QuestionsList'
 import ConfirmModal from '../components/ConfirmModal'
 import QuestionsContent from '../components/QuestionsContent'
 
-const API_BASE = 'https://d9sorihgd7.execute-api.ap-southeast-1.amazonaws.com/prod'
-const CHAT_API = 'https://i4lm3r2a0d.execute-api.ap-southeast-1.amazonaws.com/v1/chat'
+const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
+const CHAT_API = 'https://cr45imuuf0.execute-api.ap-southeast-1.amazonaws.com/v2/chat'
 
 function Submission() {
   const [searchParams] = useSearchParams()
@@ -17,6 +17,10 @@ function Submission() {
   const [activeChatQuestion, setActiveChatQuestion] = useState(null)
   const [chatSessions, setChatSessions] = useState({}) // Store chat sessions by question ID
   const [chatInput, setChatInput] = useState('')
+  const [selectedModel, setSelectedModel] = useState(() => {
+    // Load from localStorage, default to 'watsonx'
+    return localStorage.getItem('aiModel') || 'watsonx'
+  })
   const navigate = useNavigate()
   const chatMessagesRef = useRef(null)
   const chatInputRef = useRef(null)
@@ -159,6 +163,11 @@ function Submission() {
       setLoading(false)
     }
   }, [reconstructExamData])
+
+  // Save model preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('aiModel', selectedModel)
+  }, [selectedModel])
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
@@ -601,7 +610,8 @@ function Submission() {
         options: currentQuestion.data.options || [],
         correct_answer: correctAnswer,
         user_choice: userChoice || '',
-        chat_history: chatHistory
+        chat_history: chatHistory,
+        model: selectedModel  // Add selected model to request
       }
 
       // Log request details to console
@@ -635,7 +645,7 @@ function Submission() {
         }
       }))
 
-      // Call Chat API with streaming
+      // Call Chat API
       const response = await fetch(CHAT_API, {
         method: 'POST',
         headers: {
@@ -655,115 +665,96 @@ function Submission() {
         throw new Error(`API error: ${response.status} - ${errorText}`)
       }
 
-      // Get response as text (Lambda returns newline-delimited JSON)
-      const responseText = await response.text()
-      console.log('Response Text:', responseText)
+      const data = await response.json()
+      console.log('Response Data:', data)
+      console.log('========================')
 
-      // Parse newline-delimited JSON and collect all tokens
-      const lines = responseText.split('\n')
+      // Parse response from Lambda
+      let aiText = 'Xin lỗi, tôi không thể trả lời câu hỏi này.'
       let tokenCount = null
       let modelUsed = null
-      let aiText = ''
 
-      for (const line of lines) {
-        if (!line.trim()) continue
-
+      // Check for special indicators
+      if (data.empty || data.off_topic) {
+        aiText = data.message || 'Vui lòng nhập câu hỏi hợp lệ.'
+        tokenCount = data.tokens || null
+        modelUsed = data.model || null
+      } else if (data.response !== undefined) {
+        // Standard response format from Lambda
+        aiText = data.response || data.message || 'Không có phản hồi.'
+        tokenCount = data.tokens || null
+        modelUsed = data.model || null
+      } else if (data.body) {
+        // If body is a string, try parsing it
         try {
-          const parsed = JSON.parse(line)
+          const bodyData = typeof data.body === 'string' ? JSON.parse(data.body) : data.body
           
-          // Handle different event types
-          if (parsed.empty || parsed.off_topic) {
-            // Invalid input - display message immediately (no animation)
-            const message = parsed.message || 'Vui lòng nhập câu hỏi hợp lệ.'
-            tokenCount = parsed.tokens || null
-            modelUsed = parsed.model || null
-            
-            setChatSessions(prev => ({
-              ...prev,
-              [activeChatQuestion]: {
-                messages: prev[activeChatQuestion].messages.map(msg =>
-                  msg.id === thinkingId
-                    ? { ...msg, text: message, loading: false, streaming: false, tokens: tokenCount, model: modelUsed }
-                    : msg
-                )
-              }
-            }))
-            
-            return
-          } else if (parsed.token) {
-            // Collect token
-            aiText += parsed.token
-          } else if (parsed.metadata) {
-            // Metadata (model, token count, etc.)
-            tokenCount = parsed.metadata.tokens || null
-            modelUsed = parsed.metadata.model || null
-            console.log('Metadata received:', parsed.metadata)
-          } else if (parsed.complete) {
-            // Stream complete signal
-            console.log('Complete signal received')
-          } else if (parsed.error) {
-            // Error in response
-            throw new Error(parsed.error)
+          // Check for special indicators in body
+          if (bodyData.empty || bodyData.off_topic) {
+            aiText = bodyData.message || 'Vui lòng nhập câu hỏi hợp lệ.'
+          } else {
+            aiText = bodyData.response || bodyData.message || JSON.stringify(bodyData)
           }
-        } catch (e) {
-          console.warn('Failed to parse line:', line, e)
+          tokenCount = bodyData.tokens || null
+          modelUsed = bodyData.model || null
+        } catch {
+          aiText = data.body
         }
+      } else if (typeof data === 'string') {
+        aiText = data
+      } else if (data.message) {
+        aiText = data.message
+      } else {
+        console.warn('Unexpected response format:', data)
+        aiText = JSON.stringify(data, null, 2)
       }
 
-      console.log('Parsed AI Text Length:', aiText.length, 'characters')
       console.log('Parsed AI Text:', aiText.substring(0, 200) + (aiText.length > 200 ? '...' : ''))
       console.log('Token Count:', tokenCount)
       console.log('Model Used:', modelUsed)
 
-      // Animate text word by word (like ChatGPT)
+      // Animate text token by token (like ChatGPT)
       const words = aiText.split(' ')
-      const totalWords = words.length
-      console.log('Total words to animate:', totalWords)
-      
-      // Capture values in closure to prevent race conditions
-      const questionId = activeChatQuestion
-      const messageId = thinkingId
-      const finalTokenCount = tokenCount
-      const finalModel = modelUsed
+      let currentIndex = 0
       
       // Clear thinking message and start with empty text
       setChatSessions(prev => ({
         ...prev,
-        [questionId]: {
-          messages: prev[questionId].messages.map(msg =>
-            msg.id === messageId
-              ? { ...msg, text: '', loading: false, streaming: true, tokens: finalTokenCount, model: finalModel }
+        [activeChatQuestion]: {
+          messages: prev[activeChatQuestion].messages.map(msg =>
+            msg.id === thinkingId
+              ? { ...msg, text: '', loading: false, streaming: true, tokens: tokenCount, model: modelUsed }
               : msg
           )
         }
       }))
 
-      // Animate words appearing one by one using recursive setTimeout
-      const animateText = (index) => {
-        if (index < totalWords) {
-          const displayText = words.slice(0, index + 1).join(' ')
+      // Animate words appearing one by one
+      const animateText = () => {
+        if (currentIndex < words.length) {
+          const displayText = words.slice(0, currentIndex + 1).join(' ')
           
           setChatSessions(prev => ({
             ...prev,
-            [questionId]: {
-              messages: prev[questionId].messages.map(msg =>
-                msg.id === messageId
+            [activeChatQuestion]: {
+              messages: prev[activeChatQuestion].messages.map(msg =>
+                msg.id === thinkingId
                   ? { ...msg, text: displayText }
                   : msg
               )
             }
           }))
           
-          // Continue animation
-          setTimeout(() => animateText(index + 1), 25)
+          currentIndex++
+          // Adjust speed: faster streaming effect
+          setTimeout(animateText, 25)
         } else {
           // Mark streaming as complete
-          console.log('Animation complete. Displayed', totalWords, 'words')
           setChatSessions(prev => ({
             ...prev,
-            [questionId]: {
-              messages: prev[questionId].messages.map(msg =>
-                msg.id === messageId
+            [activeChatQuestion]: {
+              messages: prev[activeChatQuestion].messages.map(msg =>
+                msg.id === thinkingId
                   ? { ...msg, streaming: false }
                   : msg
               )
@@ -772,8 +763,7 @@ function Submission() {
         }
       }
       
-      // Start animation from first word
-      animateText(0)
+      animateText()
     } catch (error) {
       console.error('=== Chat API Error ===')
       console.error('Error:', error)
@@ -796,7 +786,7 @@ function Submission() {
         }
       }))
     }
-  }, [chatInput, activeChatQuestion, chatSessions, allQuestions, answers, user])
+  }, [chatInput, activeChatQuestion, chatSessions, allQuestions, answers, user, selectedModel])
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1008,6 +998,17 @@ function Submission() {
                 <span>Chat với AI - Câu {allQuestions.find(q => q.id === activeChatQuestion)?.num}</span>
               </div>
               <div className="chat-header-actions">
+                <label htmlFor="model-selector" className="model-selector-label">Chọn model:</label>
+                <select 
+                  id="model-selector"
+                  className="model-selector"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  title="Chọn mô hình AI"
+                >
+                  <option value="watsonx">WatsonX</option>
+                  <option value="gemini">Gemini</option>
+                </select>
                 <button
                   className="close-chat-btn"
                   onClick={() => setActiveChatQuestion(null)}
@@ -1046,6 +1047,22 @@ function Submission() {
                   </div>
                 ) : (
                   <div key={message.id} className="chat-message ai">
+                    <div className="message-avatar ai-avatar">
+                      {message.model === 'gemini' && (
+                        <img 
+                          src="https://registry.npmmirror.com/@lobehub/icons-static-png/1.74.0/files/dark/gemini-color.png" 
+                          alt="Gemini"
+                          className="ai-avatar-img"
+                        />
+                      )}
+                      {message.model === 'watsonx' && (
+                        <img 
+                          src="https://ibm.gallerycdn.vsassets.io/extensions/ibm/watsonx-data/1.2.0/1758701492843/Microsoft.VisualStudio.Services.Icons.Default" 
+                          alt="WatsonX"
+                          className="ai-avatar-img"
+                        />
+                      )}
+                    </div>
                     <div className="message-content">
                       <div className="ai-response-text">
                         {message.loading ? (

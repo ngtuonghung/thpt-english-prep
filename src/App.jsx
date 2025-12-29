@@ -7,10 +7,10 @@ import Submission from './pages/Submission'
 import ReviewQuiz from './pages/ReviewQuiz'
 
 // API and Cognito config
-const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
-const COGNITO_DOMAIN = 'https://ap-southeast-1dmwikmffs.auth.ap-southeast-1.amazoncognito.com'
-const CLIENT_ID = '4033t9pc3hhe7r84eq8mi2cnkj'
-const SCOPE = 'email+openid+phone+profile'
+const API_BASE = 'https://d9sorihgd7.execute-api.ap-southeast-1.amazonaws.com/prod'
+const COGNITO_DOMAIN = 'https://ap-southeast-11dmhyj0by.auth.ap-southeast-1.amazoncognito.com'
+const CLIENT_ID = '2iokj9vleie1jc2b2tt9eu11n4'
+const SCOPE = 'email+openid+phone'
 const REDIRECT_URI = `${window.location.origin}/callback`
 
 function CallbackHandler() {
@@ -118,7 +118,10 @@ function Landing() {
       const data = await response.json()
       console.log('Response data:', data)
       
-      const body = typeof data.body === 'string' ? JSON.parse(data.body) : data.body
+      // Handle both direct response and body-wrapped response
+      const body = data.body 
+        ? (typeof data.body === 'string' ? JSON.parse(data.body) : data.body)
+        : data
       console.log('Parsed body:', body)
       
       if (body.loginUrl) {
@@ -126,6 +129,7 @@ function Landing() {
         window.location.href = body.loginUrl
       } else {
         console.error('No loginUrl in response')
+        console.error('Full response body:', body)
       }
     } catch (err) {
       console.error('Login error:', err)

@@ -5,7 +5,7 @@ import TopBar from '../components/TopBar'
 import ExamHistory from '../components/ExamHistory'
 import './Dashboard.css'
 
-const API_BASE = 'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'
+const API_BASE = 'https://d9sorihgd7.execute-api.ap-southeast-1.amazonaws.com/prod'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -51,7 +51,7 @@ export default function Dashboard() {
       const body = data.body ? (typeof data.body === 'string' ? JSON.parse(data.body) : data.body) : data
       console.log('User info parsed:', body)
       console.log('User groups:', body.groups)
-      console.log('Is admin?', body.groups?.includes('admin'))
+      console.log('Is teacher?', body.groups?.includes('teacher'))
 
       setUserInfo(body)
       // Save user info to localStorage for future sessions
@@ -471,8 +471,8 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Upload PDF - Admin only */}
-            {userInfo?.groups?.includes('admin') && (
+            {/* Upload PDF - Teacher only */}
+            {userInfo?.groups?.includes('teacher') && (
               <div className="action-card-modern">
                 <div className="action-card-content">
                   <div className="action-card-icon">

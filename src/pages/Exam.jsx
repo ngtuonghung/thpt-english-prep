@@ -473,7 +473,7 @@ function Exam() {
         completeAnswers
       })
 
-      const response = await fetch(`${'https://hrj5qc8u76.execute-api.ap-southeast-1.amazonaws.com/prod'}/submission`, {
+      const response = await fetch(`${'https://d9sorihgd7.execute-api.ap-southeast-1.amazonaws.com/prod'}/submission`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

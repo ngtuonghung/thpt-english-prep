@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import './UserMenu.css'
 
-const COGNITO_DOMAIN = 'https://ap-southeast-1dmwikmffs.auth.ap-southeast-1.amazoncognito.com'
-const CLIENT_ID = '4033t9pc3hhe7r84eq8mi2cnkj'
+const COGNITO_DOMAIN = 'https://ap-southeast-11dmhyj0by.auth.ap-southeast-1.amazoncognito.com'
+const CLIENT_ID = '2iokj9vleie1jc2b2tt9eu11n4'
 
 export default function UserMenu({ userInfo, hideLogout = false }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
@@ -27,18 +27,14 @@ export default function UserMenu({ userInfo, hideLogout = false }) {
 
   const handleLogout = () => {
     // Clear all localStorage
-    localStorage.removeItem('user')
-    localStorage.removeItem('userInfo')
+    localStorage.clear()
 
     // Clear all sessionStorage (exam data)
-    sessionStorage.removeItem('currentExam')
-    sessionStorage.removeItem('examAnswers')
-    sessionStorage.removeItem('examStartTime')
-    sessionStorage.removeItem('examTimeRemaining')
-    sessionStorage.removeItem('examStarted')
+    sessionStorage.clear()
 
     // Redirect to Cognito logout
     const logoutUrl = `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(window.location.origin)}`
+    console.log('Logout URL:', logoutUrl)
     window.location.href = logoutUrl
   }
 
