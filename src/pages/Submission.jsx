@@ -9,6 +9,20 @@ import QuestionsContent from '../components/QuestionsContent'
 const API_BASE = 'https://d9sorihgd7.execute-api.ap-southeast-1.amazonaws.com/prod'
 const CHAT_API = 'https://i4lm3r2a0d.execute-api.ap-southeast-1.amazonaws.com/v1/chat'
 
+// Helper function to clean API response messages
+const cleanResponseMessage = (message) => {
+  if (!message) return message
+  
+  if (message.includes('[OFF_TOPIC]')) {
+    return 'Câu hỏi của bạn không liên quan đến nội dung bài học. Vui lòng đặt câu hỏi về phần này.'
+  }
+  if (message.includes('[EMPTY_MESSAGE]')) {
+    return 'Vui lòng nhập câu hỏi của bạn.'
+  }
+  
+  return message
+}
+
 function Submission() {
   const [searchParams] = useSearchParams()
   const [user, setUser] = useState(null)
@@ -672,25 +686,7 @@ function Submission() {
           const parsed = JSON.parse(line)
           
           // Handle different event types
-          if (parsed.empty || parsed.off_topic) {
-            // Invalid input - display message immediately (no animation)
-            const message = parsed.message || 'Vui lòng nhập câu hỏi hợp lệ.'
-            tokenCount = parsed.tokens || null
-            modelUsed = parsed.model || null
-            
-            setChatSessions(prev => ({
-              ...prev,
-              [activeChatQuestion]: {
-                messages: prev[activeChatQuestion].messages.map(msg =>
-                  msg.id === thinkingId
-                    ? { ...msg, text: message, loading: false, streaming: false, tokens: tokenCount, model: modelUsed }
-                    : msg
-                )
-              }
-            }))
-            
-            return
-          } else if (parsed.token) {
+          if (parsed.token) {
             // Collect token
             aiText += parsed.token
           } else if (parsed.metadata) {
@@ -714,6 +710,9 @@ function Submission() {
       console.log('Parsed AI Text:', aiText.substring(0, 200) + (aiText.length > 200 ? '...' : ''))
       console.log('Token Count:', tokenCount)
       console.log('Model Used:', modelUsed)
+
+      // Clean the AI text to replace [OFF_TOPIC] and [EMPTY_MESSAGE] with friendly messages
+      aiText = cleanResponseMessage(aiText)
 
       // Animate text word by word (like ChatGPT)
       const words = aiText.split(' ')
